@@ -123,7 +123,12 @@ cron.schedule('0 10 * * *', async () => {
   timezone: "Asia/Kolkata"
 });
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL || 'https://your-frontend.vercel.app'
+    : 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 
 // Health check
