@@ -119,6 +119,14 @@ if %checks_passed%==%total_checks% (
     echo 5. Update API URLs after deployment
     echo.
     echo 📖 See DEPLOYMENT.md for detailed instructions
+    echo.
+    echo 🌐 Local development server: http://localhost:3000
+    echo 🌐 Open local development server? ^(Y/N^)
+    set /p open_web=
+    if /i "%open_web%"=="Y" (
+        echo Opening http://localhost:3000...
+        start http://localhost:3000
+    )
 ) else (
     echo ❌ SOME CHECKS FAILED ^(%checks_passed%/%total_checks% passed^)
     echo.
