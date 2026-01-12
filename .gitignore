@@ -38,6 +38,10 @@ Thumbs.db
 *.swo
 *~
 
+# Deployment platforms
+.vercel/
+.render/
+
 # Logs
 *.log
 logs/

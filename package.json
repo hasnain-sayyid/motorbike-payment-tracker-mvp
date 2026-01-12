@@ -1,14 +1,25 @@
 {
   "name": "motorbike-payment-tracker-mvp",
+  "version": "1.0.0",
+  "description": "Full-stack motorbike payment tracking application",
   "scripts": {
-    "deploy:frontend": "cd frontend && vercel --prod",
-    "deploy:backend": "cd backend && railway up",
-    "deploy:all": "npm run deploy:backend && npm run deploy:frontend",
-    "setup:cli": "npm install -g vercel @railway/cli",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:backend": "cd backend && npm run dev",
     "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm install"
+    "build:backend": "cd backend && npm install",
+    "deploy:frontend": "cd frontend && vercel --prod",
+    "deploy:backend": "echo 'Push to main branch to deploy backend on Render'",
+    "deploy:all": "npm run build:frontend && npm run deploy:frontend",
+    "setup:cli": "npm install -g vercel",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "start": "npm run dev"
   },
   "devDependencies": {
     "concurrently": "^7.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }

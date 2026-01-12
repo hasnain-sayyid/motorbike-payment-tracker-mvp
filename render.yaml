@@ -3,11 +3,20 @@ services:
     name: motorbike-payment-tracker-api
     runtime: node
     plan: free
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    rootDir: ./backend
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        sync: false
       - key: FRONTEND_URL
-        value: https://frontend-blue-seven-42.vercel.app
-    healthCheckPath: /health
+        value: https://your-frontend-url.vercel.app
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+    healthCheckPath: /api/health

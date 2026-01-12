@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 Starting automated deployment process...
+echo 🚀 Starting automated deployment process for Render + Vercel...
 
 REM Check if Node.js is installed
 node --version >nul 2>&1
@@ -11,23 +11,20 @@ if errorlevel 1 (
 
 REM Install CLI tools if not present
 echo 📋 Installing deployment tools...
-call npm install -g vercel @railway/cli
+call npm install -g vercel
 
-REM Deploy backend to Railway
-echo 🔧 Deploying backend to Railway...
-cd backend
-call railway login
-call railway link --service motorbike-backend || call railway create --name motorbike-backend
-call railway up --detach
-cd ..
+echo 📦 Installing dependencies...
+call npm run install:all
 
-REM Wait for deployment
-echo ⏳ Waiting for backend deployment...
-timeout /t 30 /nobreak >nul
+echo 🔧 Building frontend...
+call npm run build:frontend
 
 REM Deploy frontend to Vercel
 echo 🎨 Deploying frontend to Vercel...
 cd frontend
+call vercel login
+echo 🚀 Deploying to production...
+call vercel --prod
 call vercel --prod --yes
 cd ..
 

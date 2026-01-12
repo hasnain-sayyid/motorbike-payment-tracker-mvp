@@ -28,6 +28,20 @@
 ✅ **Customer Management**: Add/edit your 5-10 customers easily  
 ✅ **Automated Daily Checks**: No manual monitoring needed  
 ✅ **Smart Reminders**: Different messages for due vs overdue  
+✅ **Cloud Deployment**: Ready for Render (backend) + Vercel (frontend)
+
+## 🌐 Deployment
+
+### Quick Deploy:
+- **Windows**: `./deploy.bat`
+- **Mac/Linux**: `./deploy.sh`
+
+### Platforms:
+- **Backend**: [Render](https://render.com) (Free tier: 750 hours/month)
+- **Frontend**: [Vercel](https://vercel.com) (Free tier: Unlimited)
+
+### Full Guide:
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment instructions.  
 ✅ **Status Tracking**: Visual dashboard shows who needs attention  
 ✅ **Manual Override**: Send immediate reminders when needed  
 ✅ **Test Mode**: Safe testing without sending real SMS  

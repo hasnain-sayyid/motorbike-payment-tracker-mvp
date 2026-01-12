@@ -131,12 +131,21 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Health check
+// Health check endpoints
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     mode: process.env.NODE_ENV || 'development'
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    mode: process.env.NODE_ENV || 'development',
+    service: 'motorbike-payment-tracker-api'
   });
 });
 
