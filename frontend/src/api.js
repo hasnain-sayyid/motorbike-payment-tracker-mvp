@@ -1,8 +1,9 @@
 // Payment Tracker API
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-app.onrender.com' 
-  : 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://your-backend.railway.app' 
+    : 'http://localhost:5000');
 
 // Customer management
 export const fetchCustomers = async () => {
