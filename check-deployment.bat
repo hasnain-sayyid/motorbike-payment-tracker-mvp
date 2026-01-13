@@ -120,6 +120,10 @@ if %checks_passed%==%total_checks% (
     echo.
     echo 📖 See DEPLOYMENT.md for detailed instructions
     echo.
+    echo 🌐 LIVE DEPLOYMENT URLS:
+    echo Frontend: https://frontend-blue-seven-42.vercel.app
+    echo Backend:  https://motorbike-payment-tracker-api.onrender.com ^(needs deployment^)
+    echo.
     echo 🌐 Local development server: http://localhost:3000
     echo 🌐 Open local development server? ^(Y/N^)
     set /p open_web=
