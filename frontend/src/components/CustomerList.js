@@ -142,6 +142,12 @@ const CustomerList = ({
               </div>
 
               <div className="customer-details">
+                {customer.bikeDetails && (
+                  <div className="detail-item">
+                    <span className="label">Bike:</span>
+                    <span className="value">{customer.bikeDetails}</span>
+                  </div>
+                )}
                 <div className="detail-item">
                   <span className="label">{t('monthlyAmount')}:</span>
                   <span className="value">{customer.monthlyAmount}</span>
@@ -154,12 +160,6 @@ const CustomerList = ({
                   <div className="detail-item">
                     <span className="label">Last Reminder:</span>
                     <span className="value">{formatDate(customer.lastReminderSent)}</span>
-                  </div>
-                )}
-                {customer.notes && (
-                  <div className="detail-item">
-                    <span className="label">Notes:</span>
-                    <span className="value notes">{customer.notes}</span>
                   </div>
                 )}
               </div>
@@ -181,21 +181,6 @@ const CustomerList = ({
                     </button>
                   </>
                 )}
-                
-                <div className="secondary-actions">
-                  <button 
-                    onClick={() => onEditCustomer(customer)}
-                    className="btn-secondary"
-                  >
-                    ✏️ {t('edit')}
-                  </button>
-                  <button 
-                    onClick={() => onDeleteCustomer(customer.id, customer.name)}
-                    className="btn-secondary btn-danger"
-                  >
-                    🗑️ {t('delete')}
-                  </button>
-                </div>
               </div>
             </div>
           ))}

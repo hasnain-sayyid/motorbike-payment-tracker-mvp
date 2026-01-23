@@ -39,8 +39,13 @@ module.exports = {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           phone TEXT NOT NULL,
+          bikeDetails TEXT,
+          bikePrice REAL,
+          downPayment REAL,
+          totalAmount REAL,
           monthlyAmount REAL NOT NULL,
           dueDate INTEGER NOT NULL,
+          agreementDate DATE,
           status TEXT DEFAULT 'pending',
           lastReminderSent DATETIME,
           notes TEXT,
@@ -51,6 +56,13 @@ module.exports = {
           console.error('❌ Error creating customers table:', err.message);
         } else {
           console.log('✅ Customers table ready');
+          
+          // Add missing columns to existing table if they don't exist
+          db.run('ALTER TABLE customers ADD COLUMN bikeDetails TEXT', () => {});
+          db.run('ALTER TABLE customers ADD COLUMN bikePrice REAL', () => {});
+          db.run('ALTER TABLE customers ADD COLUMN downPayment REAL', () => {});
+          db.run('ALTER TABLE customers ADD COLUMN totalAmount REAL', () => {});
+          db.run('ALTER TABLE customers ADD COLUMN agreementDate DATE', () => {});
         }
       });
       
@@ -74,11 +86,64 @@ module.exports = {
     });
   },
 
+  // Helper function to calculate status dynamically
+  calculateCustomerStatus: function (customer) {
+    const today = new Date().getDate();
+    const dueDate = customer.dueDate;
+    
+    // If already paid, keep the paid status
+    if (customer.status === 'paid') {
+      return 'paid';
+    }
+    
+    // If today is past the due date, status is overdue
+    if (today > dueDate) {
+      return 'overdue';
+    }
+    
+    // If today is the due date, status is pending (due)
+    if (today === dueDate) {
+      return 'pending';
+    }
+    
+    // If today is before the due date, status is pending
+    return 'pending';
+  },
+
   // Customer management
   getAllCustomers: function (callback) {
     db.all(
       'SELECT * FROM customers ORDER BY dueDate ASC',
-      callback
+      (err, customers) => {
+        if (err) {
+          callback(err, null);
+          return;
+        }
+        
+        // Calculate dynamic status for each customer
+        if (customers) {
+          customers = customers.map(customer => {
+            const calculatedStatus = module.exports.calculateCustomerStatus(customer);
+            
+            // Update status in database if it changed (except for reminder_sent)
+            if (calculatedStatus !== customer.status && customer.status !== 'reminder_sent') {
+              db.run(
+                'UPDATE customers SET status = ? WHERE id = ?',
+                [calculatedStatus, customer.id],
+                (updateErr) => {
+                  if (updateErr) {
+                    console.error(`Error updating status for customer ${customer.id}:`, updateErr);
+                  }
+                }
+              );
+            }
+            
+            return { ...customer, status: calculatedStatus };
+          });
+        }
+        
+        callback(null, customers);
+      }
     );
   },
 
@@ -86,24 +151,65 @@ module.exports = {
     db.get(
       'SELECT * FROM customers WHERE id = ?',
       [id],
-      callback
+      (err, customer) => {
+        if (err || !customer) {
+          callback(err, customer);
+          return;
+        }
+        
+        // Calculate dynamic status
+        const calculatedStatus = module.exports.calculateCustomerStatus(customer);
+        
+        // Update status in database if it changed (except for reminder_sent)
+        if (calculatedStatus !== customer.status && customer.status !== 'reminder_sent') {
+          db.run(
+            'UPDATE customers SET status = ? WHERE id = ?',
+            [calculatedStatus, customer.id],
+            (updateErr) => {
+              if (updateErr) {
+                console.error(`Error updating status for customer ${customer.id}:`, updateErr);
+              }
+            }
+          );
+        }
+        
+        callback(null, { ...customer, status: calculatedStatus });
+      }
     );
   },
 
-  createCustomer: function (name, phone, monthlyAmount, dueDate, notes, callback) {
+  createCustomer: function (customerData, callback) {
+    const { name, phone, bikeDetails, bikePrice, downPayment, totalAmount, monthlyAmount, dueDate, agreementDate, notes } = customerData;
+    
     db.run(
-      'INSERT INTO customers (name, phone, monthlyAmount, dueDate, notes) VALUES (?, ?, ?, ?, ?)',
-      [name, phone, monthlyAmount, dueDate, notes || ''],
+      `INSERT INTO customers (name, phone, bikeDetails, bikePrice, downPayment, totalAmount, monthlyAmount, dueDate, agreementDate, notes) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, phone, bikeDetails || null, bikePrice || null, downPayment || null, totalAmount || null, monthlyAmount, dueDate, agreementDate || null, notes || ''],
       function (err) {
         callback(err, this?.lastID);
       }
     );
   },
 
-  updateCustomer: function (id, name, phone, monthlyAmount, dueDate, status, notes, callback) {
+  updateCustomer: function (id, customerData, callback) {
+    // Extract all customer fields
+    const { name, phone, bikeDetails, bikePrice, downPayment, totalAmount, monthlyAmount, dueDate, agreementDate, status, notes } = customerData;
+    
     db.run(
-      'UPDATE customers SET name = ?, phone = ?, monthlyAmount = ?, dueDate = ?, status = ?, notes = ? WHERE id = ?',
-      [name, phone, monthlyAmount, dueDate, status, notes || '', id],
+      `UPDATE customers SET 
+        name = ?, 
+        phone = ?, 
+        bikeDetails = ?,
+        bikePrice = ?,
+        downPayment = ?,
+        totalAmount = ?,
+        monthlyAmount = ?, 
+        dueDate = ?, 
+        agreementDate = ?,
+        status = ?, 
+        notes = ? 
+      WHERE id = ?`,
+      [name, phone, bikeDetails || null, bikePrice || null, downPayment || null, totalAmount || null, monthlyAmount, dueDate, agreementDate || null, status, notes || '', id],
       callback
     );
   },
@@ -129,18 +235,33 @@ module.exports = {
     const today = new Date().getDate();
     db.all(
       `SELECT * FROM customers 
-       WHERE dueDate <= ? AND status IN ('pending', 'overdue') 
+       WHERE dueDate <= ? AND status != 'paid'
        ORDER BY dueDate ASC`,
       [today],
-      callback
+      (err, customers) => {
+        if (err) {
+          callback(err, null);
+          return;
+        }
+        
+        // Calculate dynamic status for each customer
+        if (customers) {
+          customers = customers.map(customer => {
+            const calculatedStatus = module.exports.calculateCustomerStatus(customer);
+            return { ...customer, status: calculatedStatus };
+          });
+        }
+        
+        callback(null, customers);
+      }
     );
   },
 
   // Payment history
-  addPayment: function (customerId, amount, notes, callback) {
+  addPayment: function (customerId, amount, paymentDate, notes, callback) {
     db.run(
-      'INSERT INTO payment_history (customerId, amount, notes) VALUES (?, ?, ?)',
-      [customerId, amount, notes || ''],
+      'INSERT INTO payment_history (customerId, amount, paymentDate, notes) VALUES (?, ?, ?, ?)',
+      [customerId, amount, paymentDate || new Date().toISOString(), notes || ''],
       function (err) {
         if (!err) {
           // Update customer status to paid
@@ -180,5 +301,13 @@ module.exports = {
 
   getPaymentStatuses: function () {
     return PAYMENT_STATUSES;
+  },
+
+  // Reset statuses at the start of each month
+  resetMonthlyStatuses: function (callback) {
+    db.run(
+      `UPDATE customers SET status = 'pending' WHERE status = 'paid'`,
+      callback
+    );
   }
 };

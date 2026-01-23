@@ -10,11 +10,13 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   const [editedCustomer, setEditedCustomer] = useState(customer);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deletedPaymentIds, setDeletedPaymentIds] = useState([]); // Track deleted payments
 
   // Update editedCustomer when customer prop changes (e.g., after recording a payment)
   useEffect(() => {
     if (!isEditing) { // Only update if not currently editing
       setEditedCustomer(customer);
+      setDeletedPaymentIds([]); // Reset deleted payments when not editing
     }
   }, [customer, isEditing]);
 
@@ -59,11 +61,10 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
 
   const addNewPayment = () => {
     const newPayment = {
-      id: Date.now(),
+      id: Date.now(), // Temporary ID
       amount: 0,
-      date: new Date().toISOString().split('T')[0],
-      type: 'monthly',
-      status: 'pending'
+      paymentDate: new Date().toISOString().split('T')[0],
+      notes: ''
     };
     
     setEditedCustomer(prev => ({
@@ -73,6 +74,13 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   };
 
   const removePayment = (paymentIndex) => {
+    const paymentToRemove = editedCustomer.paymentHistory[paymentIndex];
+    
+    // If it's a real payment from database (not a temporary one), track it for deletion
+    if (paymentToRemove.id < 1000000000000) {
+      setDeletedPaymentIds(prev => [...prev, paymentToRemove.id]);
+    }
+    
     setEditedCustomer(prev => ({
       ...prev,
       paymentHistory: prev.paymentHistory?.filter((_, index) => index !== paymentIndex) || []
@@ -82,32 +90,71 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Determine customer status based on payment history
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
+      // Step 1: Delete removed payments from database
+      for (const paymentId of deletedPaymentIds) {
+        try {
+          await api.deletePayment(paymentId);
+          console.log(`Payment ${paymentId} deleted`);
+        } catch (deleteError) {
+          console.error('Error deleting payment:', deleteError);
+          alert(`Failed to delete payment ID ${paymentId}. Please try again.`);
+          setLoading(false);
+          return;
+        }
+      }
       
-      const hasPaymentThisMonth = editedCustomer.paymentHistory?.some(payment => {
-        if (payment.status !== 'completed') return false;
-        const paymentDate = new Date(payment.date);
-        return paymentDate.getMonth() + 1 === currentMonth && 
-               paymentDate.getFullYear() === currentYear;
-      });
+      // Step 2: Save new payments to database (payments with temporary IDs >= 1000000000000)
+      const newPayments = editedCustomer.paymentHistory?.filter(payment => 
+        payment.id >= 1000000000000 // These are temporary IDs from Date.now()
+      ) || [];
       
-      // Update customer status based on payment history
-      const updatedCustomer = {
-        ...editedCustomer,
-        status: hasPaymentThisMonth ? 'paid' : editedCustomer.status
+      // Save each new payment via POST /api/payments
+      for (const payment of newPayments) {
+        try {
+          await api.recordPayment({
+            customerId: customer.id,
+            amount: parseFloat(payment.amount) || 0,
+            paymentDate: payment.paymentDate || payment.date || new Date().toISOString().split('T')[0],
+            notes: payment.notes || ''
+          });
+        } catch (paymentError) {
+          console.error('Error saving payment:', paymentError);
+          alert(`Failed to save payment of ${payment.amount}. Please try again.`);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Step 3: Update customer details (without payment history)
+      const customerData = {
+        name: editedCustomer.name,
+        phone: editedCustomer.phone,
+        bikeDetails: editedCustomer.bikeDetails,
+        bikePrice: editedCustomer.bikePrice,
+        downPayment: editedCustomer.downPayment,
+        totalAmount: editedCustomer.totalAmount,
+        monthlyAmount: editedCustomer.monthlyAmount,
+        dueDate: editedCustomer.dueDate,
+        agreementDate: editedCustomer.agreementDate,
+        status: editedCustomer.status,
+        notes: editedCustomer.notes
       };
       
-      await api.updateCustomer(customer.id, updatedCustomer);
+      await api.updateCustomer(customer.id, customerData);
+      
+      // Step 4: Refresh customer data from server to get updated payment history
+      const refreshedCustomer = await api.getCustomer(customer.id);
+      
       setIsEditing(false);
+      setDeletedPaymentIds([]); // Clear deleted payments list
       
       // Call parent onEdit to refresh the data
       if (onEdit) {
-        onEdit(updatedCustomer);
+        onEdit(refreshedCustomer);
+    setDeletedPaymentIds([]); // Clear deleted payments when canceling
       }
       
-      alert('Customer details updated successfully!');
+      alert('Customer details and payments saved successfully!');
     } catch (error) {
       console.error('Error updating customer:', error);
       alert('Failed to update customer details');
@@ -128,11 +175,16 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return 'N/A';
+    // Parse the date string as local date to avoid timezone issues
+    const date = dateString.includes('T') ? dateString.split('T')[0] : dateString;
+    const [year, month, day] = date.split('-');
+    return `${month}/${day}/${year}`;
   };
 
+  // Calculate total paid from payment history (all payments are considered completed)
   const totalPaid = editedCustomer.paymentHistory?.reduce((sum, payment) => 
-    payment.status === 'completed' ? sum + Number(payment.amount) : sum, 0) || 0;
+    sum + Number(payment.amount || 0), 0) || 0;
     
   // Add down payment to total if it's not already in payment history
   const downPaymentInHistory = editedCustomer.paymentHistory?.some(p => p.type === 'down_payment') || false;
@@ -264,6 +316,22 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
               </div>
               
               <div className="info-item">
+                <span className="label">Agreement Date:</span>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    value={editedCustomer.agreementDate || ''}
+                    onChange={(e) => handleInputChange('agreementDate', e.target.value)}
+                    className="edit-input"
+                  />
+                ) : (
+                  <span className="value">
+                    {customer.agreementDate ? new Date(customer.agreementDate).toLocaleDateString() : 'Not set'}
+                  </span>
+                )}
+              </div>
+              
+              <div className="info-item">
                 <span className="label">Status:</span>
                 {isEditing ? (
                   <select
@@ -318,8 +386,7 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
                 <div className="payment-header">
                   <span>Date</span>
                   <span>Amount</span>
-                  <span>Type</span>
-                  <span>Status</span>
+                  <span>Notes</span>
                   {isEditing && <span>Actions</span>}
                 </div>
                 {editedCustomer.paymentHistory.map((payment, index) => (
@@ -328,12 +395,12 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
                       {isEditing ? (
                         <input
                           type="date"
-                          value={payment.date?.split('T')[0] || ''}
-                          onChange={(e) => handlePaymentHistoryChange(index, 'date', e.target.value)}
+                          value={(payment.paymentDate || payment.date)?.split('T')[0] || ''}
+                          onChange={(e) => handlePaymentHistoryChange(index, 'paymentDate', e.target.value)}
                           className="payment-input"
                         />
                       ) : (
-                        formatDate(payment.date)
+                        formatDate(payment.paymentDate || payment.date)
                       )}
                     </span>
                     <span>
@@ -350,36 +417,15 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
                     </span>
                     <span>
                       {isEditing ? (
-                        <select
-                          value={payment.type || 'monthly'}
-                          onChange={(e) => handlePaymentHistoryChange(index, 'type', e.target.value)}
-                          className="payment-select"
-                        >
-                          <option value="down_payment">Down Payment</option>
-                          <option value="monthly">Monthly Payment</option>
-                          <option value="extra">Extra Payment</option>
-                        </select>
+                        <input
+                          type="text"
+                          value={payment.notes || ''}
+                          onChange={(e) => handlePaymentHistoryChange(index, 'notes', e.target.value)}
+                          className="payment-input"
+                          placeholder="Payment notes"
+                        />
                       ) : (
-                        payment.type === 'down_payment' ? 'Down Payment' : 
-                        payment.type === 'monthly' ? 'Monthly Payment' : 
-                        payment.type || 'Unknown'
-                      )}
-                    </span>
-                    <span>
-                      {isEditing ? (
-                        <select
-                          value={payment.status || 'pending'}
-                          onChange={(e) => handlePaymentHistoryChange(index, 'status', e.target.value)}
-                          className="payment-select"
-                        >
-                          <option value="completed">Completed</option>
-                          <option value="pending">Pending</option>
-                          <option value="failed">Failed</option>
-                        </select>
-                      ) : (
-                        <span className={`status-badge status-${payment.status}`}>
-                          {payment.status?.charAt(0).toUpperCase() + payment.status?.slice(1)}
-                        </span>
+                        payment.notes || '-'
                       )}
                     </span>
                     {isEditing && (

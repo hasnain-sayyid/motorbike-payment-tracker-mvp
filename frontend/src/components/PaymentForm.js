@@ -4,6 +4,7 @@ import './PaymentForm.css';
 const PaymentForm = ({ customer, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     amount: customer?.monthlyAmount || '',
+    paymentDate: new Date().toISOString().split('T')[0], // Today's date as default
     notes: ''
   });
 
@@ -24,9 +25,15 @@ const PaymentForm = ({ customer, onSubmit, onCancel }) => {
       return;
     }
 
+    if (!formData.paymentDate) {
+      alert('Please select a payment date');
+      return;
+    }
+
     onSubmit({
       customerId: customer.id,
       amount: amount,
+      paymentDate: formData.paymentDate,
       notes: formData.notes
     });
   };
@@ -59,6 +66,18 @@ const PaymentForm = ({ customer, onSubmit, onCancel }) => {
               placeholder="5000"
               min="0.01"
               step="0.01"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="paymentDate">Payment Date *</label>
+            <input
+              type="date"
+              id="paymentDate"
+              name="paymentDate"
+              value={formData.paymentDate}
+              onChange={handleInputChange}
               required
             />
           </div>

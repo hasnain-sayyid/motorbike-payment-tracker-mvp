@@ -1,10 +1,14 @@
 // Payment Tracker API
 import { exportCustomersToExcel, exportSingleCustomerToExcel, importCustomersFromExcel } from './utils/excelUtils';
 
+// Always use localhost for local development, even in production build
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'https://motorbike-payment-tracker-api.onrender.com' 
-    : 'http://localhost:5000');
+  (isLocalhost 
+    ? 'http://localhost:5000'
+    : process.env.NODE_ENV === 'production' 
+      ? 'https://motorbike-payment-tracker-api.onrender.com' 
+      : 'http://localhost:5000');
 
 // Mock data for demonstration
 const ORIGINAL_MOCK_CUSTOMERS = [
@@ -145,7 +149,17 @@ export const fixPaymentStatuses = () => {
 
 // Customer management
 export const fetchCustomers = async () => {
-  // For production deployment, use session mock data
+  // Always use API when running on localhost
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  // Always use API for localhost, regardless of build mode
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/customers`);
+    if (!response.ok) throw new Error('Failed to fetch customers');
+    return response.json();
+  }
+  
+  // For production deployment on external servers, use session mock data
   if (process.env.NODE_ENV === 'production') {
     // Always read fresh data from localStorage
     const freshData = initializeSessionData();
@@ -161,6 +175,14 @@ export const fetchCustomers = async () => {
 };
 
 export const fetchCustomer = async (id) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/customers/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch customer');
+    return response.json();
+  }
+  
   // For production deployment, use session mock data
   if (process.env.NODE_ENV === 'production') {
     const customer = sessionMockCustomers.find(c => c.id === parseInt(id));
@@ -175,7 +197,24 @@ export const fetchCustomer = async (id) => {
   return response.json();
 };
 
+// Alias for consistency
+export const getCustomer = fetchCustomer;
+
 export const createCustomer = async (customerData) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/customers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(customerData),
+    });
+    if (!response.ok) throw new Error('Failed to create customer');
+    return response.json();
+  }
+  
   // For production deployment, add to session mock data
   if (process.env.NODE_ENV === 'production') {
     return new Promise(resolve => {
@@ -219,6 +258,20 @@ export const createCustomer = async (customerData) => {
 };
 
 export const updateCustomer = async (id, customerData) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/customers/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(customerData),
+    });
+    if (!response.ok) throw new Error('Failed to update customer');
+    return response.json();
+  }
+  
   // For production deployment, update session mock data
   if (process.env.NODE_ENV === 'production') {
     return new Promise((resolve) => {
@@ -253,6 +306,16 @@ export const updateCustomer = async (id, customerData) => {
 };
 
 export const deleteCustomer = async (id) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/customers/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete customer');
+    return response.json();
+  }
+  
   // For production deployment, remove from session mock data
   if (process.env.NODE_ENV === 'production') {
     return new Promise(resolve => {
@@ -274,6 +337,14 @@ export const deleteCustomer = async (id) => {
 
 // Payment management
 export const fetchCustomersDue = async () => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/customers-due`);
+    if (!response.ok) throw new Error('Failed to fetch customers due');
+    return response.json();
+  }
+  
   // For production deployment, use session mock data
   if (process.env.NODE_ENV === 'production') {
     const dueCustomers = sessionMockCustomers.filter(c => c.status === 'overdue' || c.status === 'pending');
@@ -288,6 +359,20 @@ export const fetchCustomersDue = async () => {
 };
 
 export const recordPayment = async (paymentData) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(paymentData),
+    });
+    if (!response.ok) throw new Error('Failed to record payment');
+    return response.json();
+  }
+  
   // For production deployment, add payment to session mock data
   if (process.env.NODE_ENV === 'production') {
     return new Promise(resolve => {
@@ -300,7 +385,7 @@ export const recordPayment = async (paymentData) => {
         const newPayment = {
           id: Date.now(),
           amount: Number(paymentData.amount),
-          date: new Date().toISOString(),
+          paymentDate: paymentData.paymentDate || new Date().toISOString(),
           type: 'monthly',
           status: 'completed', // Always set as completed for recorded payments
           notes: paymentData.notes || 'Payment recorded'
@@ -350,7 +435,47 @@ export const recordPayment = async (paymentData) => {
   return response.json();
 };
 
+export const deletePayment = async (paymentId) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/payments/${paymentId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete payment');
+    return response.json();
+  }
+  
+  // For production deployment, remove from session mock data
+  if (process.env.NODE_ENV === 'production') {
+    return new Promise(resolve => {
+      // Find and remove payment from customer's payment history
+      sessionMockCustomers.forEach(customer => {
+        if (customer.paymentHistory) {
+          customer.paymentHistory = customer.paymentHistory.filter(p => p.id !== parseInt(paymentId));
+        }
+      });
+      saveSessionData(sessionMockCustomers);
+      setTimeout(() => resolve({ success: true, message: 'Payment deleted successfully' }), 300);
+    });
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/payments/${paymentId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete payment');
+  return response.json();
+};
+
 export const fetchPaymentHistory = async (customerId) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/customers/${customerId}/payments`);
+    if (!response.ok) throw new Error('Failed to fetch payment history');
+    return response.json();
+  }
+  
   // For production deployment, get payment history from session mock data
   if (process.env.NODE_ENV === 'production') {
     return new Promise(resolve => {
@@ -367,6 +492,16 @@ export const fetchPaymentHistory = async (customerId) => {
 
 // Reminder management
 export const sendManualReminder = async (customerId) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/send-reminder/${customerId}`, {
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error('Failed to send reminder');
+    return response.json();
+  }
+  
   // For production deployment, simulate reminder sent
   if (process.env.NODE_ENV === 'production') {
     return new Promise(resolve => {
@@ -387,6 +522,16 @@ export const sendManualReminder = async (customerId) => {
 };
 
 export const testReminders = async () => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/test-reminders`, {
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error('Failed to test reminders');
+    return response.json();
+  }
+  
   // For production deployment, simulate test reminders
   if (process.env.NODE_ENV === 'production') {
     return new Promise(resolve => {
@@ -422,6 +567,14 @@ export const sendTestSMS = async (phoneNumber, message) => {
 
 // Utility
 export const fetchPaymentStatuses = async () => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    const response = await fetch(`${API_BASE_URL}/api/payment-statuses`);
+    if (!response.ok) throw new Error('Failed to fetch payment statuses');
+    return response.json();
+  }
+  
   // For production deployment, return static statuses
   if (process.env.NODE_ENV === 'production') {
     return new Promise(resolve => {

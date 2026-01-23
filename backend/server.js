@@ -62,6 +62,24 @@ const sendSMSReminder = async (customer) => {
   }
 };
 
+// Monthly status reset job - runs at 00:01 AM on the 1st of each month
+cron.schedule('1 0 1 * *', () => {
+  console.log('\n🔄 === MONTHLY STATUS RESET STARTED ===');
+  console.log(`🕙 Time: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
+  
+  db.resetMonthlyStatuses((err) => {
+    if (err) {
+      console.error('❌ Error resetting monthly statuses:', err);
+    } else {
+      console.log('✅ All paid customer statuses have been reset to pending for the new month');
+    }
+    console.log('=== MONTHLY RESET COMPLETED ===\n');
+  });
+}, {
+  scheduled: true,
+  timezone: "Asia/Kolkata"
+});
+
 // Daily reminder job - runs at 10:00 AM every day
 cron.schedule('0 10 * * *', async () => {
   console.log('\n🔄 === DAILY PAYMENT REMINDER CHECK STARTED ===');
@@ -125,9 +143,7 @@ cron.schedule('0 10 * * *', async () => {
 });
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL, 'https://frontend-blue-seven-42.vercel.app']
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', process.env.FRONTEND_URL, 'https://frontend-blue-seven-42.vercel.app'].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -158,7 +174,27 @@ app.get('/api/customers', (req, res) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
-      res.json(customers || []);
+      // Fetch payment history for each customer
+      if (!customers || customers.length === 0) {
+        return res.json([]);
+      }
+      
+      let completedCustomers = 0;
+      const customersWithHistory = [];
+      
+      customers.forEach((customer, index) => {
+        db.getPaymentHistory(customer.id, (payErr, payments) => {
+          customersWithHistory[index] = {
+            ...customer,
+            paymentHistory: payments || []
+          };
+          
+          completedCustomers++;
+          if (completedCustomers === customers.length) {
+            res.json(customersWithHistory);
+          }
+        });
+      });
     }
   });
 });
@@ -170,19 +206,26 @@ app.get('/api/customers/:id', (req, res) => {
     } else if (!customer) {
       res.status(404).json({ error: 'Customer not found' });
     } else {
-      res.json(customer);
+      // Fetch payment history for this customer
+      db.getPaymentHistory(customer.id, (payErr, payments) => {
+        res.json({
+          ...customer,
+          paymentHistory: payments || []
+        });
+      });
     }
   });
 });
 
 app.post('/api/customers', (req, res) => {
-  const { name, phone, monthlyAmount, dueDate, notes } = req.body;
+  const customerData = req.body;
+  const { name, phone, monthlyAmount, dueDate } = customerData;
   
   if (!name || !phone || !monthlyAmount || !dueDate) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   
-  db.createCustomer(name, phone, monthlyAmount, dueDate, notes, (err, customerId) => {
+  db.createCustomer(customerData, (err, customerId) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
@@ -190,20 +233,20 @@ app.post('/api/customers', (req, res) => {
       res.status(201).json({ 
         id: customerId, 
         message: 'Customer created successfully',
-        customer: { id: customerId, name, phone, monthlyAmount, dueDate, notes }
+        customer: { ...customerData, id: customerId }
       });
     }
   });
 });
 
 app.put('/api/customers/:id', (req, res) => {
-  const { name, phone, monthlyAmount, dueDate, status, notes } = req.body;
+  const customerData = req.body;
   
-  db.updateCustomer(req.params.id, name, phone, monthlyAmount, dueDate, status, notes, (err) => {
+  db.updateCustomer(req.params.id, customerData, (err) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
-      console.log(`✅ Customer updated: ${name} (ID: ${req.params.id})`);
+      console.log(`✅ Customer updated: ${customerData.name} (ID: ${req.params.id})`);
       res.json({ message: 'Customer updated successfully' });
     }
   });
@@ -232,21 +275,38 @@ app.get('/api/customers-due', (req, res) => {
 });
 
 app.post('/api/payments', (req, res) => {
-  const { customerId, amount, notes } = req.body;
+  const { customerId, amount, paymentDate, notes } = req.body;
   
   if (!customerId || !amount) {
     return res.status(400).json({ error: 'Customer ID and amount are required' });
   }
   
-  db.addPayment(customerId, amount, notes, (err, paymentId) => {
+  db.addPayment(customerId, amount, paymentDate, notes, (err, paymentId) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
-      console.log(`💰 Payment recorded: ₹${amount} for customer ID ${customerId}`);
+      console.log(`💰 Payment recorded: ₹${amount} for customer ID ${customerId} on ${paymentDate || 'today'}`);
       res.status(201).json({ 
         id: paymentId, 
         message: 'Payment recorded successfully' 
       });
+    }
+  });
+});
+
+app.delete('/api/payments/:id', (req, res) => {
+  const paymentId = req.params.id;
+  
+  if (!paymentId) {
+    return res.status(400).json({ error: 'Payment ID is required' });
+  }
+  
+  db.deletePayment(paymentId, (err) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      console.log(`🗑️ Payment deleted: ID ${paymentId}`);
+      res.json({ message: 'Payment deleted successfully' });
     }
   });
 });

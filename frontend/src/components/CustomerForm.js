@@ -7,8 +7,13 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: customer?.name || '',
     phone: customer?.phone || '',
+    bikeDetails: customer?.bikeDetails || '',
+    bikePrice: customer?.bikePrice || '',
+    downPayment: customer?.downPayment || '',
+    totalAmount: customer?.totalAmount || '',
     monthlyAmount: customer?.monthlyAmount || '',
     dueDate: customer?.dueDate || '',
+    agreementDate: customer?.agreementDate || '',
     notes: customer?.notes || ''
   });
 
@@ -91,6 +96,60 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
           </div>
 
           <div className="form-group">
+            <label htmlFor="bikeDetails">Bike Details</label>
+            <input
+              type="text"
+              id="bikeDetails"
+              name="bikeDetails"
+              value={formData.bikeDetails}
+              onChange={handleInputChange}
+              placeholder="e.g., Honda CB 2024"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="bikePrice">Bike Price</label>
+            <input
+              type="number"
+              id="bikePrice"
+              name="bikePrice"
+              value={formData.bikePrice}
+              onChange={handleInputChange}
+              placeholder="150000"
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="downPayment">Down Payment</label>
+            <input
+              type="number"
+              id="downPayment"
+              name="downPayment"
+              value={formData.downPayment}
+              onChange={handleInputChange}
+              placeholder="30000"
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="totalAmount">Total Amount</label>
+            <input
+              type="number"
+              id="totalAmount"
+              name="totalAmount"
+              value={formData.totalAmount}
+              onChange={handleInputChange}
+              placeholder="150000"
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <div className="form-group">
             <label htmlFor="monthlyAmount">{t('installmentAmount')} *</label>
             <input
               type="number"
@@ -119,7 +178,16 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
               required
             />
             <small>{t('dueDayHelper')}</small>
-          </div>
+          <div className="form-group">
+            <label htmlFor="agreementDate">Agreement Date (Date of Sale/Down Payment)</label>
+            <input
+              type="date"
+              id="agreementDate"
+              name="agreementDate"
+              value={formData.agreementDate || ''}
+              onChange={handleInputChange}
+            />
+          </div>          </div>
 
           <div className="form-group">
             <label htmlFor="notes">{t('notes')}</label>

@@ -10,9 +10,9 @@ export const exportCustomersToExcel = (customers) => {
     // Prepare customer summary data
     const customerSummary = customers.map(customer => {
       const totalPaid = customer.paymentHistory?.reduce((sum, payment) => 
-        payment.status === 'completed' ? sum + payment.amount : sum, 0) || 0;
+        sum + Number(payment.amount || 0), 0) || 0;
       const remainingAmount = customer.totalAmount - totalPaid;
-      const completedPayments = customer.paymentHistory?.filter(p => p.status === 'completed').length || 0;
+      const completedPayments = customer.paymentHistory?.length || 0;
 
       return {
         'Customer Name': customer.name,
@@ -46,10 +46,8 @@ export const exportCustomersToExcel = (customers) => {
             'Phone': customer.phone,
             'Payment ID': payment.id,
             'Amount': payment.amount,
-            'Date': new Date(payment.date).toLocaleDateString(),
-            'Type': payment.type === 'down_payment' ? 'Down Payment' : 
-                   payment.type === 'monthly' ? 'Monthly Payment' : payment.type,
-            'Status': payment.status.charAt(0).toUpperCase() + payment.status.slice(1)
+            'Date': new Date(payment.paymentDate || payment.date).toLocaleDateString(),
+            'Notes': payment.notes || '-'
           });
         });
       }
@@ -65,12 +63,12 @@ export const exportCustomersToExcel = (customers) => {
     const totalDownPayments = customers.reduce((sum, customer) => sum + customer.downPayment, 0);
     const totalAmountPaid = customers.reduce((sum, customer) => {
       const customerPaid = customer.paymentHistory?.reduce((customerSum, payment) => 
-        payment.status === 'completed' ? customerSum + payment.amount : customerSum, 0) || 0;
+        customerSum + Number(payment.amount || 0), 0) || 0;
       return sum + customerPaid;
     }, 0);
     const totalRemaining = customers.reduce((sum, customer) => {
       const customerPaid = customer.paymentHistory?.reduce((customerSum, payment) => 
-        payment.status === 'completed' ? customerSum + payment.amount : customerSum, 0) || 0;
+        customerSum + Number(payment.amount || 0), 0) || 0;
       return sum + (customer.totalAmount - customerPaid);
     }, 0);
 
@@ -117,7 +115,7 @@ export const exportSingleCustomerToExcel = (customer) => {
 
     // Customer details
     const totalPaid = customer.paymentHistory?.reduce((sum, payment) => 
-      payment.status === 'completed' ? sum + payment.amount : sum, 0) || 0;
+      sum + Number(payment.amount || 0), 0) || 0;
     const remainingAmount = customer.totalAmount - totalPaid;
 
     const customerInfo = [
@@ -142,10 +140,8 @@ export const exportSingleCustomerToExcel = (customer) => {
       const paymentHistory = customer.paymentHistory.map(payment => ({
         'Payment ID': payment.id,
         'Amount': payment.amount,
-        'Date': new Date(payment.date).toLocaleDateString(),
-        'Type': payment.type === 'down_payment' ? 'Down Payment' : 
-               payment.type === 'monthly' ? 'Monthly Payment' : payment.type,
-        'Status': payment.status.charAt(0).toUpperCase() + payment.status.slice(1)
+        'Date': new Date(payment.paymentDate || payment.date).toLocaleDateString(),
+        'Notes': payment.notes || '-'
       }));
 
       const historyWS = XLSX.utils.json_to_sheet(paymentHistory);
