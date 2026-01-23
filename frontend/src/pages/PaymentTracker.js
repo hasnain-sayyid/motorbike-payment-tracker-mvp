@@ -20,7 +20,6 @@ const PaymentTracker = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showDetailsCustomer, setShowDetailsCustomer] = useState(null);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -193,38 +192,9 @@ const PaymentTracker = () => {
     }
   };
 
-  const handleResetData = async () => {
-    // Check if admin is authenticated (skip check if called after successful login)
-    if (!isAdminAuthenticated) {
-      setShowAdminLogin(true);
-      return;
-    }
-
-    if (!window.confirm('⚠️ WARNING: This will permanently delete ALL customer data!\n\nThis action cannot be undone. Are you absolutely sure?')) {
-      return;
-    }
-
-    try {
-      const response = await api.resetMockData();
-      alert(response.message);
-      loadCustomers();
-    } catch (err) {
-      console.error('Error resetting data:', err);
-      alert('Failed to reset data');
-    }
-  };
-
   const handleCustomersImported = (importedCustomers) => {
     // Refresh the customer list after import
     loadCustomers();
-  };
-
-  const handleAdminLoginSuccess = () => {
-    setShowAdminLogin(false);
-    // After successful login, proceed with reset data
-    setTimeout(() => {
-      handleResetData();
-    }, 100);
   };
 
   if (loading) {
@@ -280,15 +250,6 @@ const PaymentTracker = () => {
           >
             📱 Test SMS
           </button>
-
-          <button 
-            onClick={handleResetData} 
-            className="btn-secondary"
-            style={{background: '#dc3545', color: 'white'}}
-            title={isAdminAuthenticated ? "Reset all data to defaults (Password Protected)" : "Reset all data (Admin Login Required)"}
-          >
-            {isAdminAuthenticated ? '🔄 Reset Data' : '🔒 Reset Data'}
-          </button>
         </div>
       </div>
 
@@ -330,14 +291,6 @@ const PaymentTracker = () => {
           customer={showDetailsCustomer}
           onClose={() => setShowDetailsCustomer(null)}
           onEdit={handleEditFromDetails}
-        />
-      )}
-
-      {showAdminLogin && (
-        <AdminLogin
-          onSuccess={handleAdminLoginSuccess}
-          onClose={() => setShowAdminLogin(false)}
-          purpose="reset customer data"
         />
       )}
     </div>
