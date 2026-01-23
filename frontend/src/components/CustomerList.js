@@ -51,26 +51,37 @@ const CustomerList = ({
     return customer.dueDate <= today && customer.status !== 'paid';
   };
 
+  const sortCustomersByStatus = (customersToSort) => {
+    const statusOrder = { overdue: 1, pending: 2, reminder_sent: 1, paid: 3 };
+    return [...customersToSort].sort((a, b) => {
+      const priorityA = statusOrder[a.status] || 4;
+      const priorityB = statusOrder[b.status] || 4;
+      return priorityA - priorityB;
+    });
+  };
+
+  const sortedCustomers = sortCustomersByStatus(customers);
+
   return (
     <div className="customer-list">
       <div className="list-header">
         <h2>{t('customerPaymentTracking')}</h2>
         <div className="stats">
           <span className="stat">
-            <span className="stat-number">{customers.length}</span>
+            <span className="stat-number">{sortedCustomers.length}</span>
             <span className="stat-label">{t('totalCustomers')}</span>
           </span>
           <span className="stat">
             <span className="stat-number">
               {(() => {
-                const overdueCount = customers.filter(c => c.status === 'overdue').length;
-                const pendingCount = customers.filter(c => c.status === 'pending').length;
+                const overdueCount = sortedCustomers.filter(c => c.status === 'overdue').length;
+                const pendingCount = sortedCustomers.filter(c => c.status === 'pending').length;
                 const total = overdueCount + pendingCount;
                 console.log('Due/Overdue Stats Debug:', {
                   overdueCount,
                   pendingCount, 
                   total,
-                  customerStatuses: customers.map(c => ({ name: c.name, status: c.status }))
+                  customerStatuses: sortedCustomers.map(c => ({ name: c.name, status: c.status }))
                 });
                 return total;
               })()}
@@ -79,14 +90,14 @@ const CustomerList = ({
           </span>
           <span className="stat">
             <span className="stat-number">
-              {customers.filter(c => c.status === 'paid').length}
+              {sortedCustomers.filter(c => c.status === 'paid').length}
             </span>
             <span className="stat-label">{t('paidThisMonth')}</span>
           </span>
         </div>
       </div>
 
-      {customers.length === 0 ? (
+      {sortedCustomers.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📋</div>
           <h3>{t('noCustomers')}</h3>
@@ -94,7 +105,7 @@ const CustomerList = ({
         </div>
       ) : (
         <div className="customer-grid">
-          {customers.map((customer) => (
+          {sortedCustomers.map((customer) => (
             <div 
               key={customer.id} 
               className={`customer-card ${isDue(customer) ? 'due' : ''}`}
