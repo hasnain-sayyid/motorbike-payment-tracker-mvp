@@ -1,0 +1,87 @@
+.language-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.language-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #6366f1;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6366f1;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+}
+
+.language-btn:hover {
+  background: #6366f1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+}
+
+.language-btn.active {
+  background: #6366f1;
+  color: white;
+}
+
+.language-icon {
+  font-size: 16px;
+}
+
+.language-text {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* RTL Support */
+.rtl .language-toggle {
+  left: 20px;
+  right: auto;
+}
+
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.rtl * {
+  font-family: 'Segoe UI', 'Noto Sans Arabic', 'Arabic UI Text', sans-serif;
+}
+
+/* Ensure English text stays LTR even in RTL mode */
+.ltr-text {
+  direction: ltr;
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .language-toggle {
+    top: 15px;
+    right: 15px;
+  }
+  
+  .rtl .language-toggle {
+    left: 15px;
+    right: auto;
+  }
+  
+  .language-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .language-text {
+    font-size: 11px;
+  }
+}

@@ -1,11 +1,11 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Detect production (Render)
-const isProduction = process.env.NODE_ENV === 'production';
+// Detect if we're actually on a cloud platform (not just production mode for SMS)
+const isCloudPlatform = process.env.RENDER || process.env.RAILWAY_ENVIRONMENT;
 
-// In production, use /tmp (writable on Render)
-const dbPath = isProduction
+// Use local path for local development, even in production mode
+const dbPath = isCloudPlatform
   ? path.join('/tmp', 'motorbike_payments.db')
   : path.join(__dirname, 'motorbike_payments.db');
 

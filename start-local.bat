@@ -4,14 +4,14 @@ echo ============================================
 
 echo.
 echo 🖥️ Starting Backend Server...
-start "Backend Server" cmd /k "cd /d \"%~dp0backend\" && npm start"
+start "Backend Server" cmd /k "cd /d \"%~dp0\backend\" && npm start"
 
 echo ⏳ Waiting for backend to start...
 timeout /t 5 /nobreak >nul
 
 echo.
 echo 🌐 Starting Frontend Server...
-start "Frontend Server" cmd /k "cd /d \"%~dp0frontend\" && npm start"
+start "Frontend Server" cmd /k "cd /d \"%~dp0\frontend\" && npm start"
 
 echo.
 echo 📱 Your app will be available at:

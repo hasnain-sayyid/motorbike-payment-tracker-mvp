@@ -1,0 +1,37 @@
+🚀 DEPLOYMENT GUIDE - Motorbike Payment Tracker
+===============================================
+
+✅ FRONTEND: Already deployed at https://frontend-blue-seven-42.vercel.app
+
+📋 BACKEND DEPLOYMENT STEPS (Render.com):
+1. Select "Connect a repository"
+2. Choose: hasnain-sayyid/motorbike-payment-tracker-mvp
+3. Configure the service:
+   
+   Service Name: motorbike-payment-tracker-api
+   Region: Oregon (US West)
+   Branch: main
+   Root Directory: backend
+   Runtime: Node
+   Build Command: npm install
+   Start Command: npm start
+   
+4. Environment Variables (Add these in Render dashboard):
+   NODE_ENV = production
+   FRONTEND_URL = https://frontend-blue-seven-42.vercel.app
+   
+5. Optional (for SMS functionality):
+   TWILIO_ACCOUNT_SID = (your Twilio SID)
+   TWILIO_AUTH_TOKEN = (your Twilio token)
+   TWILIO_PHONE_NUMBER = (your Twilio number)
+
+6. Click "Create Web Service"
+
+⏱️ Expected deployment time: 3-5 minutes
+🌐 Expected URL: https://motorbike-payment-tracker-api.onrender.com
+
+🎯 AFTER DEPLOYMENT:
+- Test backend: https://motorbike-payment-tracker-api.onrender.com/api/health
+- Full app: https://frontend-blue-seven-42.vercel.app
+
+The frontend will automatically connect to the backend once it's live!

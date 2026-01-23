@@ -370,6 +370,62 @@ app.post('/api/test-reminders', async (req, res) => {
   });
 });
 
+// Test SMS endpoint - send SMS to any number
+app.post('/api/test-sms', async (req, res) => {
+  const { phoneNumber, message } = req.body;
+  
+  if (!phoneNumber || !message) {
+    return res.status(400).json({ error: 'Phone number and message are required' });
+  }
+  
+  console.log(`🧪 Test SMS requested to ${phoneNumber}: ${message}`);
+  
+  try {
+    if (process.env.NODE_ENV === 'production' && twilioClient) {
+      // Send real SMS
+      const result = await twilioClient.messages.create({
+        body: message,
+        from: TWILIO_PHONE_NUMBER,
+        to: phoneNumber
+      });
+      
+      console.log(`✅ Real SMS sent successfully! SID: ${result.sid}`);
+      res.json({ 
+        success: true, 
+        message: 'SMS sent successfully!',
+        sid: result.sid,
+        demo: false
+      });
+    } else {
+      // Demo mode
+      console.log(`📱 SMS (Demo Mode) to ${phoneNumber}:`);
+      console.log(`📱 Message: ${message}`);
+      res.json({ 
+        success: true, 
+        message: 'SMS sent (Demo Mode) - check console',
+        demo: true
+      });
+    }
+  } catch (error) {
+    console.error('❌ SMS sending failed:', error);
+    
+    // Handle Twilio trial account limitations
+    if (error.code === 21608) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Phone number not verified',
+        message: 'Twilio Trial Account: You can only send SMS to verified phone numbers. Please verify your phone number at https://console.twilio.com/us1/develop/phone-numbers/manage/verified or upgrade your Twilio account.',
+        trialLimitation: true
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Payment Tracker Server running on http://localhost:${PORT}`);
   console.log(`🕙 Daily reminders scheduled for 10:00 AM IST`);

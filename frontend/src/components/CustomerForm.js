@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import './CustomerForm.css';
 
 const CustomerForm = ({ customer, onSubmit, onCancel }) => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: customer?.name || '',
     phone: customer?.phone || '',
@@ -23,27 +25,27 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
     
     // Validate required fields
     if (!formData.name || !formData.phone || !formData.monthlyAmount || !formData.dueDate) {
-      alert('Please fill in all required fields');
+      alert(t('fillRequiredFields'));
       return;
     }
 
     // Validate phone number (basic check)
     if (!/^[+]?[0-9]{10,15}$/.test(formData.phone.replace(/[\s-()]/g, ''))) {
-      alert('Please enter a valid phone number');
+      alert(t('validPhoneNumber'));
       return;
     }
 
     // Validate due date (1-31)
     const dueDate = parseInt(formData.dueDate);
     if (isNaN(dueDate) || dueDate < 1 || dueDate > 31) {
-      alert('Due date must be between 1 and 31');
+      alert(t('validDueDate'));
       return;
     }
 
     // Validate amount
     const amount = parseFloat(formData.monthlyAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert('Please enter a valid amount');
+      alert(t('validAmount'));
       return;
     }
 
@@ -57,37 +59,39 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
   return (
     <div className="customer-form-overlay">
       <div className="customer-form">
-        <h3>{customer ? 'Edit Customer' : 'Add New Customer'}</h3>
+        <h3>{customer ? t('editCustomer') : t('addNewCustomer')}</h3>
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Customer Name *</label>
+            <label htmlFor="name">{t('customerName')} *</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="Enter customer name"
+              placeholder={t('customerName')}
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone">Phone Number *</label>
+            <label htmlFor="phone">{t('phoneNumber')} *</label>
             <input
               type="tel"
               id="phone"
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              placeholder="+91-9876543210"
+              placeholder="+92-300-1234567"
               required
+              style={{ fontSize: '16px', padding: '12px' }}
             />
+            <small>Format: +92-XXX-XXXXXXX or 03XX-XXXXXXX</small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="monthlyAmount">Monthly Installment Amount *</label>
+            <label htmlFor="monthlyAmount">{t('installmentAmount')} *</label>
             <input
               type="number"
               id="monthlyAmount"
@@ -102,7 +106,7 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="dueDate">Due Date (Day of Month) *</label>
+            <label htmlFor="dueDate">{t('dueDay')} *</label>
             <input
               type="number"
               id="dueDate"
@@ -114,27 +118,27 @@ const CustomerForm = ({ customer, onSubmit, onCancel }) => {
               max="31"
               required
             />
-            <small>Enter the day of the month when payment is due (1-31)</small>
+            <small>{t('dueDayHelper')}</small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="notes">Notes</label>
+            <label htmlFor="notes">{t('notes')}</label>
             <textarea
               id="notes"
               name="notes"
               value={formData.notes}
               onChange={handleInputChange}
-              placeholder="Any additional notes about this customer..."
+              placeholder={t('notesPlaceholder')}
               rows="3"
             />
           </div>
 
           <div className="form-actions">
             <button type="button" onClick={onCancel} className="btn-cancel">
-              Cancel
+              {t('cancel')}
             </button>
             <button type="submit" className="btn-submit">
-              {customer ? 'Update Customer' : 'Add Customer'}
+              {customer ? t('updateCustomer') : t('addCustomer')}
             </button>
           </div>
         </form>

@@ -43,7 +43,7 @@ const PaymentForm = ({ customer, onSubmit, onCancel }) => {
           </div>
           <div className="payment-info">
             <span className="label">Monthly Amount:</span>
-            <span className="amount">₹{customer.monthlyAmount}</span>
+            <span className="amount">{customer.monthlyAmount}</span>
           </div>
         </div>
         

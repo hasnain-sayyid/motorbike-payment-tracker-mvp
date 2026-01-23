@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import './CustomerList.css';
 
 const CustomerList = ({ 
@@ -6,8 +7,10 @@ const CustomerList = ({
   onEditCustomer, 
   onDeleteCustomer, 
   onRecordPayment, 
-  onSendReminder 
+  onSendReminder,
+  onViewDetails 
 }) => {
+  const { t } = useLanguage();
   const getStatusColor = (status) => {
     switch (status) {
       case 'paid':
@@ -26,13 +29,13 @@ const CustomerList = ({
   const getStatusText = (status) => {
     switch (status) {
       case 'paid':
-        return 'Paid';
+        return t('paid');
       case 'pending':
-        return 'Pending';
+        return t('due');
       case 'overdue':
-        return 'Overdue';
+        return t('overdue');
       case 'reminder_sent':
-        return 'Reminder Sent';
+        return t('overdue');
       default:
         return status;
     }
@@ -51,23 +54,34 @@ const CustomerList = ({
   return (
     <div className="customer-list">
       <div className="list-header">
-        <h2>Customer Payment Tracking</h2>
+        <h2>{t('customerPaymentTracking')}</h2>
         <div className="stats">
           <span className="stat">
             <span className="stat-number">{customers.length}</span>
-            <span className="stat-label">Total Customers</span>
+            <span className="stat-label">{t('totalCustomers')}</span>
           </span>
           <span className="stat">
             <span className="stat-number">
-              {customers.filter(c => c.status === 'overdue' || isDue(c)).length}
+              {(() => {
+                const overdueCount = customers.filter(c => c.status === 'overdue').length;
+                const pendingCount = customers.filter(c => c.status === 'pending').length;
+                const total = overdueCount + pendingCount;
+                console.log('Due/Overdue Stats Debug:', {
+                  overdueCount,
+                  pendingCount, 
+                  total,
+                  customerStatuses: customers.map(c => ({ name: c.name, status: c.status }))
+                });
+                return total;
+              })()}
             </span>
-            <span className="stat-label">Due/Overdue</span>
+            <span className="stat-label">{t('dueOverdue')}</span>
           </span>
           <span className="stat">
             <span className="stat-number">
               {customers.filter(c => c.status === 'paid').length}
             </span>
-            <span className="stat-label">Paid This Month</span>
+            <span className="stat-label">{t('paidThisMonth')}</span>
           </span>
         </div>
       </div>
@@ -75,8 +89,8 @@ const CustomerList = ({
       {customers.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📋</div>
-          <h3>No customers added yet</h3>
-          <p>Add your first customer to start tracking payments</p>
+          <h3>{t('noCustomers')}</h3>
+          <p>{t('addCustomer')}</p>
         </div>
       ) : (
         <div className="customer-grid">
@@ -87,8 +101,26 @@ const CustomerList = ({
             >
               <div className="customer-header">
                 <div className="customer-info">
-                  <h3>{customer.name}</h3>
-                  <p className="phone">{customer.phone}</p>
+                  <h3>
+                    {customer.name}
+                    <button 
+                      onClick={() => onViewDetails(customer)}
+                      className="btn-details"
+                      title={t('details')}
+                    >
+                      📊 {t('details')}
+                    </button>
+                  </h3>
+                  <p className="phone">
+                    {customer.phone}
+                    <button 
+                      onClick={() => onEditCustomer(customer)}
+                      className="btn-edit-phone"
+                      title={t('phoneNumber')}
+                    >
+                      📞
+                    </button>
+                  </p>
                 </div>
                 <div 
                   className="status-badge"
@@ -100,12 +132,12 @@ const CustomerList = ({
 
               <div className="customer-details">
                 <div className="detail-item">
-                  <span className="label">Monthly Amount:</span>
-                  <span className="value">₹{customer.monthlyAmount}</span>
+                  <span className="label">{t('monthlyAmount')}:</span>
+                  <span className="value">{customer.monthlyAmount}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="label">Due Date:</span>
-                  <span className="value">{customer.dueDate}th of each month</span>
+                  <span className="label">{t('dueDate')}:</span>
+                  <span className="value">{customer.dueDate} {t('ofEachMonth')}</span>
                 </div>
                 {customer.lastReminderSent && (
                   <div className="detail-item">
@@ -128,13 +160,13 @@ const CustomerList = ({
                       onClick={() => onRecordPayment(customer)}
                       className="btn-action btn-payment"
                     >
-                      💰 Record Payment
+                      💰 {t('recordPayment')}
                     </button>
                     <button 
                       onClick={() => onSendReminder(customer.id)}
                       className="btn-action btn-reminder"
                     >
-                      📱 Send Reminder
+                      📱 {t('sendReminder')}
                     </button>
                   </>
                 )}
@@ -144,13 +176,13 @@ const CustomerList = ({
                     onClick={() => onEditCustomer(customer)}
                     className="btn-secondary"
                   >
-                    ✏️ Edit
+                    ✏️ {t('edit')}
                   </button>
                   <button 
                     onClick={() => onDeleteCustomer(customer.id, customer.name)}
                     className="btn-secondary btn-danger"
                   >
-                    🗑️ Delete
+                    🗑️ {t('delete')}
                   </button>
                 </div>
               </div>
