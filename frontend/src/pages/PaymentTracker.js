@@ -6,7 +6,6 @@ import CustomerDetails from '../components/CustomerDetailsSimple';
 import ExcelManager from '../components/ExcelManager';
 import AdminStatus from '../components/AdminStatus';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useAdmin } from '../contexts/AdminContext';
 import * as api from '../api';
 import './PaymentTracker.css';
 
