@@ -5,7 +5,6 @@ import PaymentForm from '../components/PaymentForm';
 import CustomerDetails from '../components/CustomerDetailsSimple';
 import ExcelManager from '../components/ExcelManager';
 import AdminStatus from '../components/AdminStatus';
-import AdminLogin from '../components/AdminLogin';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAdmin } from '../contexts/AdminContext';
 import * as api from '../api';
@@ -13,7 +12,6 @@ import './PaymentTracker.css';
 
 const PaymentTracker = () => {
   const { t } = useLanguage();
-  const { isAdminAuthenticated } = useAdmin();
   const [customers, setCustomers] = useState([]);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
