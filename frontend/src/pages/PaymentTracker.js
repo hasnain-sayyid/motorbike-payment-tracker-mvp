@@ -214,19 +214,6 @@ const PaymentTracker = () => {
     }
   };
 
-  const handleFixPayments = async () => {
-    try {
-      const response = await api.fixPaymentStatuses();
-      alert(response.message);
-      if (response.count > 0) {
-        loadCustomers(); // Refresh if any payments were fixed
-      }
-    } catch (err) {
-      console.error('Error fixing payments:', err);
-      alert('Failed to fix payment statuses');
-    }
-  };
-
   const handleCustomersImported = (importedCustomers) => {
     // Refresh the customer list after import
     loadCustomers();
