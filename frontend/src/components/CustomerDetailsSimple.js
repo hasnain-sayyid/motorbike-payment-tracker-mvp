@@ -82,12 +82,29 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await api.updateCustomer(customer.id, editedCustomer);
+      // Determine customer status based on payment history
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      
+      const hasPaymentThisMonth = editedCustomer.paymentHistory?.some(payment => {
+        if (payment.status !== 'completed') return false;
+        const paymentDate = new Date(payment.date);
+        return paymentDate.getMonth() + 1 === currentMonth && 
+               paymentDate.getFullYear() === currentYear;
+      });
+      
+      // Update customer status based on payment history
+      const updatedCustomer = {
+        ...editedCustomer,
+        status: hasPaymentThisMonth ? 'paid' : editedCustomer.status
+      };
+      
+      await api.updateCustomer(customer.id, updatedCustomer);
       setIsEditing(false);
       
       // Call parent onEdit to refresh the data
       if (onEdit) {
-        onEdit(editedCustomer);
+        onEdit(updatedCustomer);
       }
       
       alert('Customer details updated successfully!');
