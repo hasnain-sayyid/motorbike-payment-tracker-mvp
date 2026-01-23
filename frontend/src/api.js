@@ -317,6 +317,9 @@ export const recordPayment = async (paymentData) => {
         // Update customer's last payment date
         currentData[customerIndex].lastPayment = new Date().toISOString();
         
+        // Update customer status to 'paid' when payment is recorded
+        currentData[customerIndex].status = 'paid';
+        
         // Save updated data to localStorage
         saveSessionData(currentData);
         
