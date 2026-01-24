@@ -277,18 +277,36 @@ app.post('/api/payments', (req, res) => {
 
 app.delete('/api/payments/:id', (req, res) => {
   const paymentId = req.params.id;
-  
+  console.log('--- DELETE PAYMENT REQUEST ---');
+  console.log('Requested paymentId:', paymentId);
   if (!paymentId) {
+    console.log('No paymentId provided');
     return res.status(400).json({ error: 'Payment ID is required' });
   }
-  
-  db.deletePayment(paymentId, (err) => {
+  // Log all payment IDs before deletion
+  db.all('SELECT id FROM payment_history', [], (err, rows) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.log('Error fetching payment IDs:', err);
     } else {
-      console.log(`🗑️ Payment deleted: ID ${paymentId}`);
-      res.json({ message: 'Payment deleted successfully' });
+      console.log('Current payment IDs before delete:', rows.map(r => r.id));
     }
+    db.deletePayment(paymentId, (err2) => {
+      if (err2) {
+        console.log('Delete error:', err2);
+        res.status(500).json({ error: err2.message });
+      } else {
+        console.log(`🗑️ Payment deleted: ID ${paymentId}`);
+        // Log all payment IDs after deletion
+        db.all('SELECT id FROM payment_history', [], (err3, rows2) => {
+          if (err3) {
+            console.log('Error fetching payment IDs after delete:', err3);
+          } else {
+            console.log('Payment IDs after delete:', rows2.map(r => r.id));
+          }
+          res.json({ message: 'Payment deleted successfully' });
+        });
+      }
+    });
   });
 });
 
