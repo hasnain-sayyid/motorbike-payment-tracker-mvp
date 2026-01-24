@@ -3,9 +3,9 @@ services:
     name: motorbike-payment-tracker-api
     runtime: node
     plan: free
-    rootDir: ./backend
+    rootDir: backend
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -21,4 +21,3 @@ services:
         sync: false
     healthCheckPath: /api/health
     region: oregon
-    maxMemory: 512MB
