@@ -1,15 +1,24 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 // Detect if we're actually on a cloud platform (not just production mode for SMS)
 const isCloudPlatform = process.env.RENDER || process.env.RAILWAY_ENVIRONMENT;
 
-// Use local path for local development, even in production mode
+// Use local path for local development, /opt/render/project/src for Render
 const dbPath = isCloudPlatform
-  ? path.join('/tmp', 'motorbike_payments.db')
+  ? path.join(process.cwd(), 'motorbike_payments.db')
   : path.join(__dirname, 'motorbike_payments.db');
 
 console.log('📁 Using database at:', dbPath);
+console.log('📁 Current working directory:', process.cwd());
+
+// Ensure directory exists
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+  console.log('✅ Created database directory:', dbDir);
+}
 
 // Open database
 const db = new sqlite3.Database(dbPath, (err) => {
