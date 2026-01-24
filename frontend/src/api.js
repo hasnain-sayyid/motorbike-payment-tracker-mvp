@@ -7,7 +7,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL ||
   (isLocalhost 
     ? 'http://localhost:5000'
     : process.env.NODE_ENV === 'production' 
-      ? 'https://motorbike-payment-tracker-api.onrender.com' 
+      ? 'https://motorbike-backend.onrender.com' 
       : 'http://localhost:5000');
 
 // Mock data for demonstration
