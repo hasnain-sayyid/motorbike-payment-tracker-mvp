@@ -436,34 +436,16 @@ export const recordPayment = async (paymentData) => {
 };
 
 export const deletePayment = async (paymentId) => {
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  
-  if (isLocalhost) {
-    const response = await fetch(`${API_BASE_URL}/api/payments/${paymentId}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) throw new Error('Failed to delete payment');
-    return response.json();
-  }
-  
-  // For production deployment, remove from session mock data
-  if (process.env.NODE_ENV === 'production') {
-    return new Promise(resolve => {
-      // Find and remove payment from customer's payment history
-      sessionMockCustomers.forEach(customer => {
-        if (customer.paymentHistory) {
-          customer.paymentHistory = customer.paymentHistory.filter(p => p.id !== parseInt(paymentId));
-        }
-      });
-      saveSessionData(sessionMockCustomers);
-      setTimeout(() => resolve({ success: true, message: 'Payment deleted successfully' }), 300);
-    });
-  }
-
+  // Always use the real backend API for deleting payments
   const response = await fetch(`${API_BASE_URL}/api/payments/${paymentId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error('Failed to delete payment');
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to delete payment' }));
+    throw new Error(error.error || 'Failed to delete payment');
+  }
+  
   return response.json();
 };
 

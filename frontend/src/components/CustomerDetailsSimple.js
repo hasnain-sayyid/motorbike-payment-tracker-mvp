@@ -11,12 +11,14 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deletedPaymentIds, setDeletedPaymentIds] = useState([]); // Track deleted payments
+  const [editedPaymentIds, setEditedPaymentIds] = useState([]); // Track edited existing payments
 
   // Update editedCustomer when customer prop changes (e.g., after recording a payment)
   useEffect(() => {
     if (!isEditing) { // Only update if not currently editing
       setEditedCustomer(customer);
       setDeletedPaymentIds([]); // Reset deleted payments when not editing
+      setEditedPaymentIds([]); // Reset edited payments when not editing
     }
   }, [customer, isEditing]);
 
@@ -49,6 +51,13 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   };
 
   const handlePaymentHistoryChange = (paymentIndex, field, value) => {
+    const payment = editedCustomer.paymentHistory[paymentIndex];
+    
+    // Track that this existing payment was edited (if it's not a new payment)
+    if (payment.id < 1000000000000 && !editedPaymentIds.includes(payment.id)) {
+      setEditedPaymentIds(prev => [...prev, payment.id]);
+    }
+    
     setEditedCustomer(prev => ({
       ...prev,
       paymentHistory: prev.paymentHistory?.map((payment, index) => 
@@ -90,8 +99,11 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Step 1: Delete removed payments from database
-      for (const paymentId of deletedPaymentIds) {
+      // Step 1: Delete removed payments AND edited payments from database
+      // (we'll re-create edited payments with new values)
+      const paymentsToDelete = [...new Set([...deletedPaymentIds, ...editedPaymentIds])];
+      
+      for (const paymentId of paymentsToDelete) {
         try {
           await api.deletePayment(paymentId);
           console.log(`Payment ${paymentId} deleted`);
@@ -103,13 +115,16 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
         }
       }
       
-      // Step 2: Save new payments to database (payments with temporary IDs >= 1000000000000)
-      const newPayments = editedCustomer.paymentHistory?.filter(payment => 
-        payment.id >= 1000000000000 // These are temporary IDs from Date.now()
+      // Step 2: Save new payments AND re-create edited payments with updated values
+      // New payments have temporary IDs >= 1000000000000
+      // Edited payments have their original IDs in editedPaymentIds
+      const paymentsToCreate = editedCustomer.paymentHistory?.filter(payment => 
+        payment.id >= 1000000000000 || // New payments
+        editedPaymentIds.includes(payment.id) // Edited existing payments
       ) || [];
       
-      // Save each new payment via POST /api/payments
-      for (const payment of newPayments) {
+      // Save each payment via POST /api/payments
+      for (const payment of paymentsToCreate) {
         try {
           await api.recordPayment({
             customerId: customer.id,
@@ -147,11 +162,11 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
       
       setIsEditing(false);
       setDeletedPaymentIds([]); // Clear deleted payments list
+      setEditedPaymentIds([]); // Clear edited payments list
       
       // Call parent onEdit to refresh the data
       if (onEdit) {
         onEdit(refreshedCustomer);
-    setDeletedPaymentIds([]); // Clear deleted payments when canceling
       }
       
       alert('Customer details and payments saved successfully!');
@@ -166,6 +181,8 @@ const CustomerDetailsSimple = ({ customer, onClose, onEdit }) => {
   const handleCancel = () => {
     setIsEditing(false);
     setEditedCustomer(customer);
+    setDeletedPaymentIds([]); // Clear deleted payments when canceling
+    setEditedPaymentIds([]); // Clear edited payments when canceling
   };
 
 
