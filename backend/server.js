@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
-const twilio = require('twilio');
 const db = require('./database');
 
 const app = express();
@@ -11,14 +10,8 @@ const PORT = process.env.PORT || 5000;
 // Initialize database
 db.init();
 
-// Twilio configuration (replace with your credentials)
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || 'your_account_sid';
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || 'your_auth_token';
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER || '+1234567890';
-
-// Initialize Twilio client (in production mode only)
-const twilioClient = process.env.NODE_ENV === 'production' ? 
-  twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) : null;
+// SMS is now a MOCK feature (button does nothing)
+console.log('📱 SMS Feature: MOCK MODE (for demonstration purposes)');
 
 // SMS Templates
 const createReminderMessage = (customerName, amount, dueDate) => {
@@ -35,29 +28,17 @@ const createReminderMessage = (customerName, amount, dueDate) => {
   }
 };
 
-// Function to send SMS reminder
+// Function to send SMS reminder (MOCK - does not actually send)
 const sendSMSReminder = async (customer) => {
   try {
     const message = createReminderMessage(customer.name, customer.monthlyAmount, customer.dueDate);
     
-    if (process.env.NODE_ENV === 'production' && twilioClient) {
-      // Production mode - actually send SMS
-      const result = await twilioClient.messages.create({
-        body: message,
-        from: TWILIO_PHONE_NUMBER,
-        to: customer.phone
-      });
-      
-      console.log(`📱 SMS sent to ${customer.name} (${customer.phone}): ${result.sid}`);
-      return { success: true, sid: result.sid };
-    } else {
-      // Development mode - just log the message
-      console.log(`📱 SMS (Demo Mode) to ${customer.name} (${customer.phone}):`);
-      console.log(`📱 Message: ${message}`);
-      return { success: true, demo: true };
-    }
+    // MOCK mode - just log the message (no actual SMS sent)
+    console.log(`📱 SMS (MOCK) to ${customer.name} (${customer.phone}):`);
+    console.log(`📱 Message: ${message}`);
+    return { success: true, demo: true, mock: true };
   } catch (error) {
-    console.error(`❌ Failed to send SMS to ${customer.name}:`, error);
+    console.error(`❌ Failed to create SMS message:`, error);
     return { success: false, error: error.message };
   }
 };
